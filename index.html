@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#065A82">
+<title>LinkedIn Summarizer</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="https://litter.catbox.moe/ut9is1.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;color:#1a1a2e}
+header{background:linear-gradient(135deg,#065A82,#0a8ab5);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+header h1{font-size:18px;font-weight:700}
+header .subtitle{font-size:11px;opacity:.8}
+#app{max-width:500px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card h2{font-size:14px;color:#065A82;margin-bottom:10px;font-weight:600}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,#065A82,#0a8ab5);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-secondary{background:#e8f4f8;color:#065A82;margin-top:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+textarea{width:100%;min-height:100px;padding:10px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit}
+textarea:focus{outline:none;border-color:#065A82}
+input{width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit}
+input:focus{outline:none;border-color:#065A82}
+input[type=password]{letter-spacing:.05em}
+.topic-card{background:linear-gradient(135deg,var(--c1),var(--c2));border-radius:10px;padding:14px;margin-bottom:10px;color:#fff}
+.topic-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.topic-count{font-size:11px;opacity:.85;margin-bottom:8px}
+.topic-summary{font-size:12px;opacity:.9;line-height:1.5;margin-bottom:8px}
+.takeaways{list-style:none}
+.takeaways li{font-size:11px;opacity:.85;padding:3px 0;padding-left:14px;position:relative;line-height:1.4}
+.takeaways li::before{content:'\u2022';position:absolute;left:0}
+.status{padding:10px;border-radius:8px;font-size:13px;text-align:center;margin-bottom:10px}
+.status.loading{background:#e8f4f8;color:#065A82}
+.status.error{background:#fee;color:#c00}
+.status.success{background:#e8f8e8;color:#060}
+.bookmarklet-box{background:#fffbea;border:1px solid #f0c000;border-radius:8px;padding:12px;margin-bottom:10px}
+.bookmarklet-box p{font-size:12px;color:#856404;margin-bottom:8px;line-height:1.5}
+.drag-btn{display:inline-block;background:#065A82;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:move;text-decoration:none;user-select:none}
+.tab-bar{display:flex;background:#fff;border-radius:12px;padding:4px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tab{flex:1;padding:8px;border:none;background:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#666;transition:.2s}
+.tab.active{background:linear-gradient(135deg,#065A82,#0a8ab5);color:#fff}
+#scan-tab,#summary-tab,#settings-tab{display:none}
+#scan-tab.active,#summary-tab.active,#settings-tab.active{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div><div style="font-size:22px">&#128279;</div></div>
+  <div>
+    <h1>LinkedIn Summarizer</h1>
+    <div class="subtitle">Powered by Google Gemini AI</div>
+  </div>
+</header>
+<div id="app">
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('scan')">Scan</button>
+    <button class="tab" onclick="showTab('summary')">Summary</button>
+    <button class="tab" onclick="showTab('settings')">Settings</button>
+  </div>
+  <div id="scan-tab" class="active">
+    <div class="card bookmarklet-box">
+      <p><strong>Step 1:</strong> Drag this button to your bookmarks bar, then click it while on your LinkedIn feed to copy posts:</p>
+      <a class="drag-btn" href="javascript:(function(){var posts=[];var els=document.querySelectorAll('.feed-shared-update-v2,.occludable-update');els.forEach(function(e){var t=e.innerText.trim();if(t.length>50)posts.push(t.substring(0,500))});var txt=posts.slice(0,100).join('---');navigator.clipboard.writeText(txt).then(function(){alert('Copied '+posts.length+' posts!')});})()" draggable="true">Copy LinkedIn Posts</a>
+    </div>
+    <div class="card">
+      <h2>Paste Your LinkedIn Posts</h2>
+      <textarea id="posts-input" placeholder="Paste your copied LinkedIn posts here..."></textarea>
+      <button class="btn btn-secondary" onclick="autoPaste()" style="margin-top:8px">Auto-paste from clipboard</button>
+      <button class="btn btn-primary" style="margin-top:10px" onclick="summarize()" id="summarize-btn">Summarize Feed</button>
+    </div>
+    <div id="scan-status"></div>
+  </div>
+  <div id="summary-tab">
+    <div id="summary-output">
+      <div class="card" style="text-align:center;color:#999;padding:30px">
+        <div style="font-size:40px;margin-bottom:10px">&#128202;</div>
+        <div>Run a scan first to see your feed summary</div>
+      </div>
+    </div>
+  </div>
+  <div id="settings-tab">
+    <div class="card">
+      <h2>Google Gemini API Key</h2>
+      <p style="font-size:12px;color:#666;margin-bottom:10px">Get a free key at <a href="https://aistudio.google.com" target="_blank" style="color:#065A82">aistudio.google.com</a> (no credit card)</p>
+      <input type="password" id="api-key-input" placeholder="AIza..." />
+      <button class="btn btn-primary" style="margin-top:10px" onclick="saveKey()">Save Key</button>
+      <div id="key-status" style="margin-top:8px;font-size:12px;color:#060"></div>
+    </div>
+    <div class="card">
+      <h2>About</h2>
+      <p style="font-size:12px;color:#666;line-height:1.6">LinkedIn Summarizer uses Google Gemini AI (free tier) to categorize and summarize your LinkedIn feed posts by topic. Your API key is stored locally on your device.</p>
+    </div>
+  </div>
+</div>
+<script>
+const COLORS=[['#1a237e','#283593'],['#006064','#00838f'],['#1b5e20','#2e7d32'],['#4a148c','#6a1b9a'],['#bf360c','#d84315'],['#e65100','#ef6c00'],['#37474f','#455a64'],['#880e4f','#ad1457'],['#0d47a1','#1565c0'],['#33691e','#558b2f']];
+function showTab(name){['scan','summary','settings'].forEach(t=>{document.getElementById(t+'-tab').classList.toggle('active',t===name);document.querySelectorAll('.tab').forEach((btn,i)=>{btn.classList.toggle('active',['scan','summary','settings'][i]===name);});});}
+function saveKey(){const key=document.getElementById('api-key-input').value.trim();if(!key)return;localStorage.setItem('gemini_key',key);document.getElementById('key-status').textContent='Key saved!';}
+async function autoPaste(){try{const text=await navigator.clipboard.readText();document.getElementById('posts-input').value=text;}catch(e){alert('Please paste manually with Ctrl+V');}}
+async function summarize(){const key=localStorage.getItem('gemini_key');if(!key){showTab('settings');alert('Please add your Gemini API key first!');return;}const posts=document.getElementById('posts-input').value.trim();if(!posts){alert('Please paste your LinkedIn posts first!');return;}const btn=document.getElementById('summarize-btn');const statusEl=document.getElementById('scan-status');btn.disabled=true;btn.textContent='Analyzing...';statusEl.innerHTML='<div class="status loading">Gemini AI is categorizing your posts...</div>';const prompt='Analyze these LinkedIn feed posts and categorize them into 5-8 topics. For each topic provide: title, post count estimate, 2-sentence summary, and 3 key takeaways. Respond in JSON format:\n{"topics":[{"title":"Topic Name","count":12,"summary":"...","takeaways":["point1","point2","point3"]}]}\n\nPosts:\n'+posts.substring(0,15000);try{const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})});const data=await res.json();if(data.error)throw new Error(data.error.message);const text=data.candidates[0].content.parts[0].text;const result=JSON.parse(text);renderSummary(result.topics);statusEl.innerHTML='<div class="status success">Done! '+result.topics.length+' topics found.</div>';showTab('summary');}catch(e){statusEl.innerHTML='<div class="status error">Error: '+e.message+'</div>';}finally{btn.disabled=false;btn.textContent='Summarize Feed';}}
+function renderSummary(topics){const out=document.getElementById('summary-output');out.innerHTML='<div class="card"><h2>Feed Summary - '+topics.length+' Topics</h2></div>'+topics.map((t,i)=>{const[c1,c2]=COLORS[i%COLORS.length];return'<div class="topic-card" style="--c1:'+c1+';--c2:'+c2+'"><div class="topic-title">'+t.title+'</div><div class="topic-count">~'+t.count+' posts</div><div class="topic-summary">'+t.summary+'</div><ul class="takeaways">'+(t.takeaways||[]).map(k=>'<li>'+k+'</li>').join('')+'</ul></div>';}).join('');}
+const saved=localStorage.getItem('gemini_key');if(saved)document.getElementById('api-key-input').value=saved;
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}
+</script>
+</body>
+</html>
