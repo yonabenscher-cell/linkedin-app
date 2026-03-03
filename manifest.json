@@ -1,0 +1,25 @@
+{
+  "name": "LinkedIn Summarizer",
+  "short_name": "LI Summary",
+  "description": "Summarize your LinkedIn feed by topic using Google Gemini AI",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#065A82",
+  "theme_color": "#065A82",
+  "icons": [
+    {
+      "src": "https://litter.catbox.moe/3nnaud.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://litter.catbox.moe/ut9is1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
